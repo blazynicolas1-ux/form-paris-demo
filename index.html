@@ -1114,8 +1114,14 @@ const SIGNATURES = [
    c:[['PROTEIN/Chicken',1],['CARBS/Sweet Potato',1],['GREENS/Kale',1],
       ['GREENS/Broccoli',1],['FATS + SAUCES/Tahini',1]]},
   {id:'OCEAN', n:'OC\u00c9AN', price:16.90,
-   d:{fr:'Saumon et bons gras. Le bowl de r\u00e9cup\u00e9ration.',
-      en:'Salmon and good fats. The recovery bowl.'},
+   /* « Le bowl de recuperation » promettait un moment qui n'existe plus :
+      RECUPERATION a ete retiree du tunnel (voir plus haut). Une carte qui
+      nomme un besoin que l'application ne sait plus calculer donne une
+      promesse en l'air. On revient au comparatif, comme PESTO : OCEAN est
+      le plus gras des cinq, F31 contre 22 au suivant — c'est verifiable
+      sur la ligne de macros, juste en dessous. */
+   d:{fr:'Saumon et avocat. Le plus riche en bons gras.',
+      en:'Salmon and avocado. The richest in good fats.'},
    c:[['PROTEIN/Salmon',1],['CARBS/Rice',1],['GREENS/Cucumber',1],
       ['FATS + SAUCES/Avocado',1],['FATS + SAUCES/Olive Oil',0.5]]},
   {id:'PESTO', n:'PESTO', price:13.90,
