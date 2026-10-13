@@ -472,7 +472,9 @@ body.short .flow .chip,body.short #sportList .chip{padding:8px 12px}
 .stepper button{width:32px;height:32px;border:1px solid var(--line);background:none;
   font:inherit;font-size:15px;color:var(--ink);cursor:pointer;border-radius:50%;
   display:flex;align-items:center;justify-content:center;padding:0}
-.stepper .q{min-width:30px;text-align:center;font-size:12px}
+/* 44 px : « 180 g » doit tenir sans pousser les deux ronds, sinon la
+   colonne des steppers ondule d'une ligne a l'autre. */
+.stepper .q{min-width:44px;text-align:center;font-size:12px}
 .stepper .q.zero{color:var(--muted)}
 
 /* ---------- jauges ---------- */
@@ -1118,8 +1120,8 @@ const BOWL_SECS = MENU.filter(s=>!s.unit);
    ------------------------------------------------------------------ */
 const SIGNATURES = [
   {id:'ROTI', n:'R\u00d4TI', price:13.90,
-   d:{fr:'Le r\u00f4ti franc. Prot\u00e9ines hautes, gras ma\u00eetris\u00e9.',
-      en:'Straight roast. High protein, fat kept in check.'},
+   d:{fr:'Prot\u00e9ines hautes, gras ma\u00eetris\u00e9.',
+      en:'High protein, fat kept in check.'},
    c:[['PROTEIN/Chicken',1],['CARBS/Sweet Potato',1],['GREENS/Kale',1],
       ['GREENS/Broccoli',1],['FATS + SAUCES/Tahini',1]]},
   {id:'OCEAN', n:'OC\u00c9AN', price:16.90,
@@ -1129,23 +1131,23 @@ const SIGNATURES = [
       promesse en l'air. On revient au comparatif, comme PESTO : OCEAN est
       le plus gras des cinq, F31 contre 22 au suivant — c'est verifiable
       sur la ligne de macros, juste en dessous. */
-   d:{fr:'Saumon et avocat. Le plus riche en bons gras.',
-      en:'Salmon and avocado. The richest in good fats.'},
+   d:{fr:'Le plus riche en bons gras.',
+      en:'The richest in good fats.'},
    c:[['PROTEIN/Salmon',1],['CARBS/Rice',1],['GREENS/Cucumber',1],
       ['FATS + SAUCES/Avocado',1],['FATS + SAUCES/Olive Oil',0.5]]},
   {id:'PESTO', n:'PESTO', price:13.90,
-   d:{fr:'\u00c9peautre et pesto. Le plus g\u00e9n\u00e9reux en glucides.',
-      en:'Farro and pesto. The most carb-generous.'},
+   d:{fr:'Le plus g\u00e9n\u00e9reux en glucides.',
+      en:'The most carb-generous.'},
    c:[['PROTEIN/Chicken',1],['CARBS/Farro',1.5],['GREENS/Spinach',1],
       ['FATS + SAUCES/Pesto',1]]},
   {id:'JARDIN', n:'JARDIN', price:12.90,
-   d:{fr:'Enti\u00e8rement v\u00e9g\u00e9tal. Tofu, quinoa, l\u00e9gumes r\u00f4tis.',
-      en:'Fully plant-based. Tofu, quinoa, roasted vegetables.'},
+   d:{fr:'Enti\u00e8rement v\u00e9g\u00e9tal.',
+      en:'Fully plant-based.'},
    c:[['PROTEIN/Tofu',1],['CARBS/Quinoa',1],['GREENS/Carrots',1],
       ['GREENS/Broccoli',1],['FATS + SAUCES/Tahini',1]]},
   {id:'EFFILOCHE', n:'EFFILOCH\u00c9', price:14.90,
-   d:{fr:'B\u0153uf brais\u00e9 longuement, yaourt aux herbes.',
-      en:'Slow-braised beef, herb yoghurt.'},
+   d:{fr:'Le r\u00e9confort, sans l\u00e2cher les prot\u00e9ines.',
+      en:'Comfort food that keeps its protein.'},
    c:[['PROTEIN/Braised Beef',1],['CARBS/Rice',1],['GREENS/Carrots',1],
       ['FATS + SAUCES/Yoghurt',1]]}
 ];
@@ -1849,8 +1851,11 @@ function syncBarButtons(){
       /* Meme exigence qu'une signature ajustee : la ligne doit porter de
          quoi la fabriquer. "Bowl compose" seul n'est pas servable. */
       state.cart.push({custom:true, label:(LANG==='fr'?'Bowl compos\u00e9':'Custom bowl'),
+                       /* en grammes, pas en coefficient : c'est le
+                          comptoir qui lit cette ligne, et on pese des
+                          grammes — on ne pese pas des « x1,5 ». */
                        note: comps.map(([k,q])=>
-                         nameOf(ITEM[k]) + (q!==1 ? ` \u00d7${q}` : '')).join(' · '),
+                         nameOf(ITEM[k]) + ' ' + Math.round(ITEM[k].g*q) + ' g').join(' · '),
                        components:comps, price:priceCustom(comps),
                        macros:macrosOf(comps), qty:1});
       state.qty = {}; state.editing = null;
@@ -2167,10 +2172,15 @@ function renderMenu(){
     if(lb) badge = `<div class="fitbadge ${lb.cls}">${lb.cls ? '\u25cb' : '\u25cf'}
       ${t(lb.k)}</div>`;
 
-    const ing = v.comps.map(([k,q])=>{
-      const it = ITEM[k];
-      return nameOf(it) + (q !== 1 ? ` \u00d7${q}` : '');
-    }).join(' · ');
+    /* UNE CARTE NE PORTE PAS DE COEFFICIENTS. « Huile d'olive x0,5 »
+       demande au client une multiplication pour se representer une
+       assiette. Le moteur, lui, continue de travailler au demi-cran :
+       v.comps garde les quantites exactes, et le prix comme les macros
+       affiches juste en dessous en decoulent. Seul le libelle change.
+       Trois endroits, trois niveaux de precision, aucune multiplication
+       demandee a personne : la carte NOMME, la ligne olive dit la portion
+       EN MOTS (« base genereuse »), le composeur la donne EN GRAMMES. */
+    const ing = v.comps.map(([k]) => nameOf(ITEM[k])).join(' · ');
 
     /* La portion dite en clair : "base genereuse, double proteine".
        C'est ce que le comptoir doit entendre, pas un code S/M/L. */
@@ -2420,15 +2430,30 @@ function renderBuild(){
         <div class="stepper">
           <button data-m="-1">\u2212</button><span class="q" data-q></span><button data-m="1">+</button>
         </div>`;
+      /* LE COMPTEUR DIT LA PORTION, PAS LE COEFFICIENT. « 1,5x » obligeait
+         a multiplier de tete pour savoir ce qu'on allait recevoir ; le
+         grammage, lui, est la chose elle-meme. Le pas reste de 0,5 et le
+         calcul est strictement le meme — on affiche it.g*q la ou on
+         affichait q. On gagne meme en precision : 180 g se verifie, 1,5x
+         ne se verifie pas.
+         Et puisque le grammage est monte dans le compteur, il quitte la
+         ligne du dessous, qui ne garde que l'energie et les macros : une
+         information par endroit, jamais deux fois la meme. */
       const paint = ()=>{
         const q = state.qty[it.key] || 0;
         const qe = row.querySelector('[data-q]');
-        qe.textContent = q ? (q.toFixed(1).replace('.0','') + '\u00d7') : '0';
+        qe.textContent = q ? Math.round(it.g * q) + ' g' : '0';
         qe.classList.toggle('zero', !q);
         row.classList.toggle('active', !!q);
-        row.querySelector('[data-sub]').textContent = q
-          ? `${+(it.g*q).toFixed(1)} g · ${Math.round(it.kcal*q)} kcal · P${(it.p*q).toFixed(0)} C${(it.c*q).toFixed(0)} F${(it.f*q).toFixed(0)}`
-          : `${it.g} g · ${it.kcal} kcal · P${it.p} C${it.c} F${it.f}`;
+        /* LE GRAMMAGE EST DIT UNE FOIS, JAMAIS DEUX. Tant que la ligne
+           n'est pas prise, le compteur affiche « 0 » : c'est donc la
+           sous-ligne qui annonce la portion de base, sinon on choisirait
+           a l'aveugle. Des qu'elle est prise, le compteur donne le
+           grammage reel et la sous-ligne le lache pour ne garder que
+           l'energie et les macros. */
+        const n = q || 1;
+        row.querySelector('[data-sub]').textContent = (q ? '' : `${it.g} g · `)
+          + `${Math.round(it.kcal*n)} kcal · P${(it.p*n).toFixed(0)} C${(it.c*n).toFixed(0)} F${(it.f*n).toFixed(0)}`;
       };
       row.querySelectorAll('.stepper button').forEach(b=>{
         b.onclick = ()=>{
