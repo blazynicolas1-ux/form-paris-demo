@@ -410,6 +410,26 @@ body.short .flow .chip,body.short #sportList .chip{padding:8px 12px}
   color:var(--olive);flex:none}
 
 /* ---------- menu ---------- */
+/* ---------- LES VIGNETTES ----------
+   CARREES, ET CARREES PARTOUT. Une carte qui melange des photos de
+   proportions differentes se lit comme un catalogue ; le meme carre,
+   repete, se lit comme une carte. object-fit:cover recadre au centre,
+   donc une photo verticale ou panoramique entre sans se deformer : le
+   dossier de photos n'a aucun format a respecter.
+   Pas d'arrondi, pas d'ombre : la marque est au trait. */
+.th{width:46px;height:46px;object-fit:cover;flex:none;display:block}
+/* Sur un bowl signature, la vignette est posee en flottant plutot que
+   dans une colonne : le titre et la phrase de caractere s'enroulent
+   autour sans qu'aucun de ces blocs change de nature, et une carte sans
+   photo garde exactement la mise en page d'avant. */
+.bowl .th{float:left;width:78px;height:78px;margin:3px 15px 4px 0}
+/* LE FLOTTANT S'ARRETE APRES LA DESCRIPTION. Laisse libre, la liste
+   d'ingredients commencait a droite de la photo et sa suite repartait a
+   l'extreme gauche, sous la photo : un bord gauche en escalier, illisible
+   sur deux lignes. Tout ce qui suit la phrase de caractere degage donc la
+   vignette et retrouve la marge — la carte garde un seul bord gauche. */
+.bowl .ing ~ .ing, .bowl .compl, .bowl .mac, .bowl .acts{clear:both}
+
 .sec{margin-top:34px}
 .sec-h{display:flex;align-items:baseline;gap:10px;padding-bottom:11px;
   border-bottom:1px solid var(--ink)}
@@ -1331,6 +1351,35 @@ const eur = v => v.toFixed(2).replace('.', ',') + ' \u20ac';
 const nameOf = it => (LANG==='fr' && it.fr) ? it.fr : it.n;
 
 /* ---------------------------------------------------------------------
+   7ter. LES VIGNETTES
+   UN DOSSIER, UN FICHIER PAR ARTICLE, ET RIEN D'AUTRE A TENIR A JOUR.
+   On ne garde aucune liste des photos disponibles : on tente le
+   chargement de photos/<nom>.jpg et l'image qui n'existe pas se retire
+   toute seule. Deposer un fichier dans le dossier suffit a le faire
+   apparaitre ; l'enlever suffit a le faire disparaitre. Personne n'a
+   besoin de rouvrir ce fichier pour ajouter une photo.
+
+   LA CONSEQUENCE VOULUE : l'application envoyee en piece jointe, toute
+   seule, sans le dossier, s'affiche exactement comme avant. Pas de carre
+   gris, pas d'icone cassee, pas de place reservee pour rien. C'est la
+   seule facon d'ajouter des photos sans perdre la propriete qui fait la
+   valeur de ce fichier — il s'ouvre d'un double-clic, partout.
+
+   Le nom de fichier se deduit de la cle de l'article, en minuscules et
+   sans accent : 'PROTEIN/Chicken' -> protein-chicken.jpg, le bowl ROTI
+   -> bowl-roti.jpg. Voir photos/LISEZ-MOI.md pour la liste complete.
+   ------------------------------------------------------------------ */
+const PHOTO_DIR = 'photos/', PHOTO_EXT = '.jpg';
+const slug = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+const photoName = key => slug(key) + PHOTO_EXT;
+/* alt vide et volontaire : la vignette ne porte aucune information que le
+   nom du plat, juste a cote, ne donne deja. La doubler ferait repeter
+   chaque ligne par un lecteur d'ecran. */
+const thumb = (key, cls) => `<img class="th${cls ? ' '+cls : ''}" alt=""`
+  + ` src="${PHOTO_DIR}${photoName(key)}" loading="lazy" onerror="this.remove()">`;
+
+/* ---------------------------------------------------------------------
    7bis. ASSEMBLAGE DU REPAS
    Un bowl fixe ne peut pas tomber dans les fourchettes de tout le monde :
    les cibles d'un repas vont de 300 a 950 kcal selon le profil, alors
@@ -2119,7 +2168,7 @@ function renderMenu(){
          <span class="cw">${t('menu.compl')}</span></div>`
       : '';
 
-    el.innerHTML = badge + `
+    el.innerHTML = badge + thumb('bowl-' + s.id) + `
       <div class="top"><span class="nm">${s.n}</span><span class="pr">${eur(price)}</span></div>
       <div class="ing">${s.d[LANG]}</div>
       <div class="ing" style="color:var(--muted);font-size:11.5px">${ing}</div>
@@ -2191,6 +2240,7 @@ function renderMenu(){
       const row = document.createElement('div');
       row.className = 'item';
       row.innerHTML = `
+        ${thumb(it.key)}
         <div class="info">
           <div class="nm">${nameOf(it)}</div>
           <div class="sub">${it.g} ${it.u} · ${it.kcal} kcal · P${it.p} C${it.c} F${it.f}</div>
@@ -2349,6 +2399,7 @@ function renderBuild(){
       row.className='item';
       const sup = it.sup ? `+${eur(it.sup)}` : '';
       row.innerHTML = `
+        ${thumb(it.key)}
         <div class="info"><div class="nm">${nameOf(it)}</div><div class="sub" data-sub></div></div>
         <div class="pr" style="color:var(--muted);font-size:11px">${sup}</div>
         <div class="stepper">
