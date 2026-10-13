@@ -1,0 +1,10 @@
+# CE DOSSIER EST PUBLIE. Rien qui ne soit destine a etre lu par un tiers ne doit
+# y entrer. Le modele financier, le plan d'affaires et la note de vision vivent
+# dans « FORM Paris » et ne sont jamais copies ici.
+*.xlsx
+*.xls
+*.pdf
+*.docx
+*.key
+*.numbers
+.DS_Store
